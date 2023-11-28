@@ -185,20 +185,19 @@ Value parse_object(Tokenizer tok) throws ParseError {
 
 Value parse_array(Tokenizer tok) throws ParseError {
 	string next;
-	if (tok.next() == "]") {
+	if (tok.peek() == "]") {
+		tok.next();
 		return new Array(new Value[0]);
 	}
 	var list = new Gee.ArrayList<Value>();
 
 	while (true) {
-		next = tok.next();
-
 		list.add(parse(tok));
 
 		next = tok.next();
 		if (next == "]") {
 			break;
-		} else if (tok.next() != ",") {
+		} else if (next != ",") {
 			throw new ParseError.EXPECTED_COMMA(@"Expected comma, got: $next");
 		}
 	}
