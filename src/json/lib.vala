@@ -129,6 +129,8 @@ Value parse(Tokenizer tok) throws ParseError {
 		return parse_array(tok);
 	case '"':
 		return new String(next[1:-1]);
+	case '-':
+		return new Int(int.parse(next));
 	default:
 		if (next[0].isdigit()) {
 			return new Int(int.parse(next));
