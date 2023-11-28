@@ -28,7 +28,7 @@ class Tokenizer {
 		if (this.saved != null) {
 			var saved = this.saved;
 			this.saved = null;
-			return saved;
+			return (!) saved;
 		}
 
 		this.skip_whitespace();
@@ -66,7 +66,12 @@ class Tokenizer {
 	}
 
 	public string peek() throws ParseError {
-		return this.saved ?? (this.saved = this.next());
+		if (this.saved != null) {
+			return (!) this.saved;
+		} 
+
+		this.saved = this.next();
+		return (!) this.saved;
 	}
 
 	string next_word() {
@@ -121,7 +126,7 @@ public Value parse_json(string input) throws ParseError {
 }
 
 Value parse(Tokenizer tok) throws ParseError {
-	string? next = tok.next();
+	string next = tok.next();
 	switch (next[0]) {
 	case '{':
 		return parse_object(tok);
