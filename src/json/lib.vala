@@ -101,7 +101,10 @@ class Tokenizer {
 	string next_number() throws ParseError {
 		var init = this.pos;
 		assert(this.input[init].isdigit());
-		while(this.pos < this.input.length && this.input[this.pos].isdigit()) {
+		// FIXME: multiple dots would probably crash something
+		while (this.pos < this.input.length 
+			&& (this.input[this.pos].isdigit() || this.input[this.pos] == '.'))
+		{
 			this.pos++;
 		}
 
@@ -135,10 +138,10 @@ Value parse(Tokenizer tok) throws ParseError {
 	case '"':
 		return new String(next[1:-1]);
 	case '-':
-		return new Int(int.parse(next));
+		return parse_number(next);
 	default:
 		if (next[0].isdigit()) {
-			return new Int(int.parse(next));
+			return parse_number(next);
 		}
 		if (next == "null") {
 			return new Null();
@@ -153,6 +156,14 @@ Value parse(Tokenizer tok) throws ParseError {
 	}
 
 	throw new ParseError.UNEXPECTED_SYMBOL(@"Unexpected symbol: $next");
+}
+
+Value parse_number(string token) {
+	if (token.contains(".")) {
+		return new Double(double.parse(token));
+	} else {
+		return new Int(int.parse(token));
+	}
 }
 
 Value parse_object(Tokenizer tok) throws ParseError {
@@ -220,6 +231,13 @@ public class Int : Value {
 	}
 }
 
+public class Double : Value {
+	public double n;
+	public Double(double n) {
+		this.n = n;
+	}
+}
+
 public class Bool : Value {
 	public bool b;
 	public Bool(bool b) {
@@ -274,6 +292,14 @@ public class Value : GLib.Object {
 		var i = this as Int;
 		if (i == null) {
 			throw new TypeError.INVALID_TYPE(@"Trying to get int, got something else");
+		}
+		return ((!) i).n;
+	}
+
+	public double get_double() throws TypeError {
+		var i = this as Double;
+		if (i == null) {
+			throw new TypeError.INVALID_TYPE(@"Trying to get double, got something else");
 		}
 		return ((!) i).n;
 	}
