@@ -5,21 +5,32 @@ public class Monitor {
 	public int id;
 	public int width;
 	public int height;
+	public bool focused;
+	public Workspace active_workspace {get; private set;}
 
 	public Monitor.from_json(JSON.Value val) throws JSON.TypeError {
 		var dict = val.get_dict();
 		this.id = dict.get("id").get_int();
 		this.width = dict.get("width").get_int();
 		this.height = dict.get("height").get_int();
+		this.focused = dict.get("focused").get_bool();
+		this.active_workspace.id = dict.get("activeWorkspace").get_dict().get("id").get_int();
+		this.active_workspace.name = dict.get("activeWorkspace").get_dict().get("name").get_string();
 	}
 }
 
 // simple wrapper cuz generics can't have Arrays
 public class Monitors {
-	public Monitor[] monitors;
+	public Monitor[] monitors {get; private set;}
 
 	public Monitors(Monitor[] mons) {
+		print("mons.length, %d\n", mons.length);
 		this.monitors = mons;
+		print("this.monitors.length, %d\n", this.monitors.length);
+	}
+
+	public Monitor[] take() {
+		return this.monitors;
 	}
 }
 

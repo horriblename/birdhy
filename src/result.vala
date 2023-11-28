@@ -7,7 +7,7 @@ public struct Result<T, E> {
 	E? err;
 	T? val;
 
-	public Result.Ok(T val) {
+	public Result.Ok(owned T val) {
 		this.ok = true;
 		this.val = val;
 	}

@@ -13,7 +13,7 @@ public class Client : Object {
 	public bool hidden;
 	public int at[2];
 	public int size[2];
-	public Workspace workspace;
+	public Workspace workspace {get; private set;}
 	public bool floating;
 	public string class_;
 	public string title;
