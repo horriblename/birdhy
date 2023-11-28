@@ -33,10 +33,8 @@
             glib
             libgee
             gobject-introspection
+            gtk4-layer-shell
           ];
-          buildPhase = ''
-            valac -o $out/hello src/main.vala
-          '';
         };
       };
     };
@@ -66,6 +64,7 @@
           glib
           libgee
           gobject-introspection
+          gtk4-layer-shell
         ];
       };
     });
