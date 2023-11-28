@@ -33,8 +33,9 @@ public class Client : Object {
 		this.size[1] = dict.get("size").get_array()[1].get_int();
 		this.workspace.id = dict.get("workspace").get_dict().get("id").get_int();
 		this.workspace.name = dict.get("workspace").get_dict().get("name").get_string();
-		// this.floating = obj.floating
+		this.floating = dict.get("floating").get_bool();
 		this.class_ = dict.get("class").get_string();
+		this.title = dict.get("title").get_string();
 	}
 }
 
