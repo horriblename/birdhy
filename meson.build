@@ -12,8 +12,8 @@ add_global_arguments('--enable-experimental-non-null', language : 'vala')
 
 json = static_library('json', 'src/json/lib.vala', dependencies: dependencies)
 
-lib = static_library('data', 'src/lib.vala', dependencies: dependencies, link_with: [json])
+# lib = static_library('data', 'src/lib.vala', dependencies: dependencies, link_with: [json])
 
-sources = files('src/main.vala')
+sources = files('src/main.vala', 'src/client.vala', 'src/result.vala', 'src/monitor.vala')
 
-executable('birdhy', sources, dependencies: dependencies, link_with: [lib, json])
+executable('birdhy', sources, dependencies: dependencies, link_with: [json])
