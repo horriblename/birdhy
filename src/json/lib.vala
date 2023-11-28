@@ -42,7 +42,9 @@ class Tokenizer {
 			case ']':
 			case ':':
 			case ',':
-				return this.input[this.pos++ : this.pos];
+				var start = this.pos;
+				this.pos++;
+				return this.input[start : this.pos];
 			case '"':
 				return this.next_string();
 			case '-':
