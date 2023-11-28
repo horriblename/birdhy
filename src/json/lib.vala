@@ -176,7 +176,6 @@ Value parse_object(Tokenizer tok) throws ParseError {
 			throw new ParseError.EXPECTED_COLON(@"Expected colon, got: $next");
 		}
 
-		print("parsed colon");
 		obj.set(key[1:-1] /*trim quotes*/, parse(tok));
 
 		next = tok.next();
@@ -293,13 +292,6 @@ public class Value : GLib.Object {
 			throw new TypeError.INVALID_TYPE(@"Trying to get dict, got something else");
 		}
 		return ((!) dict).dict;
-	}
-}
-
-public void debug_token(string s) {
-	var tok = new Tokenizer(s);
-	for (var next = tok.next(); next != ""; next = tok.next()) {
-		print(@"token: $next\n");
 	}
 }
 
