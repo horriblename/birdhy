@@ -23,10 +23,8 @@ public class Monitor {
 public class Monitors {
 	public Monitor[] monitors {get; private set;}
 
-	public Monitors(Monitor[] mons) {
-		print("mons.length, %d\n", mons.length);
+	public Monitors(owned Monitor[] mons) {
 		this.monitors = mons;
-		print("this.monitors.length, %d\n", this.monitors.length);
 	}
 
 	public Monitor[] take() {
