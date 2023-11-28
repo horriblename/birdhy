@@ -24,6 +24,8 @@ Gtk.Widget view_workspace(Workspace ws, Vector2D ws_size, float scale) {
 	var btn = new Gtk.Button();
 	var canvas = new Gtk.Fixed();
 	btn.set_child(canvas);
+	btn.hexpand = true;
+	btn.vexpand = true;
 
 	btn.clicked.connect(() => {
 		try {
@@ -47,10 +49,6 @@ Gtk.Widget view_workspace(Workspace ws, Vector2D ws_size, float scale) {
 struct Vector2D {
 	public int x;
 	public int y;
-
-	public Vector2D mult(int factor) {
-		return {x = this.x * factor, y = this.y * factor};
-	}
 
 	public Vector2D(int x, int y) {
 		this.x = x;
@@ -100,9 +98,10 @@ void main() {
 
 	var clients = get_clients().maybe_ok();
 
+	// add clients to their respective workspace
 	foreach (Client client in clients.clients) {
-		var ws_id = client.workspace.id;
-		if (ws_id < 0) {
+		var ws_id = client.workspace.id - 1;
+		if (ws_id < 0 || !client.mapped || client.hidden) {
 			continue;
 		}
 		var i = ws_id / WORKSPACE_COLS;
@@ -117,12 +116,14 @@ void main() {
 		var box = new Gtk.Box(Gtk.Orientation.VERTICAL, GAPS_IN);
 
 		float client_scale = (win_size.x - GAPS_IN * (WORKSPACE_COLS - 1) - 2 * GAPS_OUT) / WORKSPACE_COLS / active_mon.width;  
+		Vector2D ws_size = Vector2D((int)(win_size.x * client_scale), (int)(win_size.y * client_scale));
 		// float ws_scale_y = (win_size.y - GAPS_IN * (WORKSPACE_ROWS - 1) - 2 * GAPS_OUT) / WORKSPACE_ROWS; 
 
 		for (int i = 0; i < WORKSPACE_ROWS; i++) {
 			var hbox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, GAPS_IN);
 			for (int j = 0; j < WORKSPACE_COLS; j++) {
-				hbox.append(view_workspace(workspaces[i, j], win_size.mult(2), client_scale));
+				hbox.append(view_workspace(workspaces[i, j], ws_size, client_scale));
+				hbox.vexpand = true;
 			}
 			box.append(hbox);
 		}
