@@ -17,6 +17,17 @@ public class Monitor {
 		this.active_workspace.id = dict.get("activeWorkspace").get_dict().get("id").get_int();
 		this.active_workspace.name = dict.get("activeWorkspace").get_dict().get("name").get_string();
 	}
+
+	public string to_string() {
+		return string.join(
+			"\n",
+			@"id: $id",
+			@"width: $width",
+			@"height: $height",
+			@"focused: $focused",
+			@"active_workspace: $(active_workspace.id)"
+		);
+	}
 }
 
 // simple wrapper cuz generics can't have Arrays

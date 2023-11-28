@@ -18,11 +18,6 @@ public class Client : Object {
 	public string class_;
 	public string title;
 
-	public string to_string() {
-		return @"Client{class_: $(this.class_), ..}";
-	}
-
-
 	public Client.from_json(JSON.Value obj) throws JSON.TypeError {
 		var dict = obj.get_dict();
 		this.mapped = dict.get("mapped").get_bool();
@@ -36,6 +31,20 @@ public class Client : Object {
 		this.floating = dict.get("floating").get_bool();
 		this.class_ = dict.get("class").get_string();
 		this.title = dict.get("title").get_string();
+	}
+
+	public string to_string() {
+		return string.join(
+			"\n",
+			@"class: $class_",
+			@"    mapped: $mapped",
+			@"    hidden: $hidden",
+			@"    at: [$(at[0]), $(at[1])]",
+			@"    size: [$(size[0]), $(size[1])]",
+			@"    workspace: $(workspace.id)",
+			@"    floating: $floating",
+			@"    title: $title\n"
+		);
 	}
 }
 
