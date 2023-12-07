@@ -127,10 +127,20 @@ void main() {
 		var margin_x = active_mon.width - win_size.x;
 		var margin_y = active_mon.height - win_size.y;
 		GtkLayerShell.set_namespace(window, "birdhy");
-		GtkLayerShell.set_layer(window, GtkLayerShell.Layer.BOTTOM);
+		GtkLayerShell.set_layer(window, GtkLayerShell.Layer.TOP);
+		GtkLayerShell.set_keyboard_mode(window, GtkLayerShell.KeyboardMode.EXCLUSIVE);
 		window.set_size_request(win_size.x, win_size.y);
 		window.set_default_size(win_size.x, win_size.y);
 		
+		var key_controller = new Gtk.EventControllerKey();
+		key_controller.key_pressed.connect((key) => {
+			if (key == Gdk.Key.Escape) {
+				print("escape pressed\n");
+				window.close();
+				return true;
+			}
+			return false;
+		});
 
 		var grid = new Gtk.Grid();
 		grid.set_hexpand(true);
@@ -143,6 +153,7 @@ void main() {
 		grid.set_margin_bottom(16);
 		grid.set_row_homogeneous(true);
 		grid.set_column_homogeneous(true);
+		grid.add_controller(key_controller);
 
 		// float client_scale = ((float) win_size.x - GAPS_IN * (WORKSPACE_COLS - 1) - 2 * GAPS_OUT) / WORKSPACE_COLS / active_mon.width;  
 		float client_scale = ((float) win_size.x) / (float) WORKSPACE_COLS / (float) active_mon.width;  
