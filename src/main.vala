@@ -91,8 +91,9 @@ void main() {
 		active_mon = active_mon0 ?? monitors[0];
 	}
 
+	var window_aspect_ratio = (float) active_mon.width * WORKSPACE_COLS / ((float) active_mon.height * WORKSPACE_ROWS);
 	var win_size = fit_to_box(
-		active_mon.width * WORKSPACE_COLS / active_mon.height * WORKSPACE_ROWS,
+		window_aspect_ratio,
 		(int) (active_mon.width * MAX_WIDTH),
 		(int) (active_mon.height * MAX_HEIGHT)
 	);
