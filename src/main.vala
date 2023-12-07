@@ -47,7 +47,8 @@ Gtk.Widget view_workspace(Workspace ws, Vector2D ws_size, float scale) {
 	foreach (Client client in ws.clients) {
 		var c = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 		c.add_css_class("window");
-		c.set_size_request(client.size[0], client.size[1]);
+		c.add_css_class("frame");
+		c.set_size_request((int) (client.size[0] * scale), (int)(client.size[1] * scale));
 		canvas.put(c, client.at[0] * scale, client.at[1] * scale);
 	}
 
