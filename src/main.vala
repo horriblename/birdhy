@@ -20,7 +20,7 @@ struct Workspace {
 	}
 }
 
-Gtk.Widget view_workspace(Workspace ws, Vector2D ws_size, float scale) {
+Gtk.Widget view_workspace(Gtk.Window window, Workspace ws, Vector2D ws_size, float scale) {
 	var container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 	var btn = new Gtk.Button();
 	var canvas = new Gtk.Fixed();
@@ -42,6 +42,7 @@ Gtk.Widget view_workspace(Workspace ws, Vector2D ws_size, float scale) {
 		} catch (Error e) {
 			print("Error switching workspace: %s", e.message);
 		}
+		window.close();
 	});
 
 	foreach (Client client in ws.clients) {
@@ -162,7 +163,7 @@ void main() {
 
 		for (int row = 0; row < WORKSPACE_ROWS; row++) {
 			for (int col = 0; col < WORKSPACE_COLS; col++) {
-				var ws = view_workspace(workspaces[row, col], ws_size, client_scale);
+				var ws = view_workspace(window, workspaces[row, col], ws_size, client_scale);
 				grid.attach(ws, col, row, 1, 1);
 			}
 		}
