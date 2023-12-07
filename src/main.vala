@@ -135,6 +135,12 @@ void main() {
 		var grid = new Gtk.Grid();
 		grid.set_hexpand(true);
 		grid.set_vexpand(true);
+		grid.set_row_spacing(16);
+		grid.set_column_spacing(16);
+		grid.set_margin_start(16);
+		grid.set_margin_end(16);
+		grid.set_margin_top(16);
+		grid.set_margin_bottom(16);
 		grid.set_row_homogeneous(true);
 		grid.set_column_homogeneous(true);
 
