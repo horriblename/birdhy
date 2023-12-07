@@ -21,29 +21,37 @@ struct Workspace {
 }
 
 Gtk.Widget view_workspace(Workspace ws, Vector2D ws_size, float scale) {
+	var container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 	var btn = new Gtk.Button();
 	var canvas = new Gtk.Fixed();
+	container.append(btn);
+	container.add_css_class("workspace");
+	container.set_hexpand(true);
+	container.set_vexpand(true);
+	// container.set_size_request(ws_size.x, ws_size.y);
 	btn.set_child(canvas);
-	btn.hexpand = true;
-	btn.vexpand = true;
+	btn.set_hexpand(true);
+	btn.set_vexpand(true);
+	canvas.set_hexpand(true);
+	canvas.set_vexpand(true);
 
 	btn.clicked.connect(() => {
 		try {
+			print(@"switching to workspace $(ws.id): ");
 			GLib.Process.spawn_sync (null, {"hyprctl", "dispatch", "workspace", @"$(ws.id)"}, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, null);
 		} catch (Error e) {
 			print("Error switching workspace: %s", e.message);
 		}
 	});
 
-	btn.set_size_request (ws_size.x, ws_size.y);
-
 	foreach (Client client in ws.clients) {
 		var c = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+		c.add_css_class("window");
 		c.set_size_request(client.size[0], client.size[1]);
 		canvas.put(c, client.at[0] * scale, client.at[1] * scale);
 	}
 
-	return btn;
+	return container;
 }
 
 struct Vector2D {
@@ -80,7 +88,6 @@ void main() {
 				break;
 			}
 		}
-		// somehow removing this line breaks the whole thing??????????????????
 		active_mon = active_mon0 ?? monitors[0];
 	}
 
@@ -93,7 +100,7 @@ void main() {
 	Workspace[,] workspaces = new Workspace[WORKSPACE_ROWS, WORKSPACE_COLS];
 
 	for (int i = 0; i < WORKSPACE_COLS * WORKSPACE_ROWS; i++) {
-		workspaces[i/WORKSPACE_COLS, i % WORKSPACE_COLS] = Workspace(i);
+		workspaces[i/WORKSPACE_COLS, i % WORKSPACE_COLS] = Workspace(i+1);
 	}
 
 	var clients = get_clients().maybe_ok();
@@ -113,29 +120,38 @@ void main() {
 
 	app.activate.connect(() => {
 		var window = new Gtk.ApplicationWindow(app);
-		var box = new Gtk.Box(Gtk.Orientation.VERTICAL, GAPS_IN);
 
-		float client_scale = (win_size.x - GAPS_IN * (WORKSPACE_COLS - 1) - 2 * GAPS_OUT) / WORKSPACE_COLS / active_mon.width;  
+		GtkLayerShell.init_for_window(window);
+		var margin_x = active_mon.width - win_size.x;
+		var margin_y = active_mon.height - win_size.y;
+		GtkLayerShell.set_namespace(window, "birdhy");
+		GtkLayerShell.set_layer(window, GtkLayerShell.Layer.BOTTOM);
+		window.set_size_request(win_size.x, win_size.y);
+		window.set_default_size(win_size.x, win_size.y);
+		
+
+		var grid = new Gtk.Grid();
+		grid.set_hexpand(true);
+		grid.set_vexpand(true);
+		grid.set_row_homogeneous(true);
+		grid.set_column_homogeneous(true);
+
+		// float client_scale = ((float) win_size.x - GAPS_IN * (WORKSPACE_COLS - 1) - 2 * GAPS_OUT) / WORKSPACE_COLS / active_mon.width;  
+		float client_scale = ((float) win_size.x) / (float) WORKSPACE_COLS / (float) active_mon.width;  
+		print(@"client scale: $client_scale\n");
 		Vector2D ws_size = Vector2D((int)(win_size.x * client_scale), (int)(win_size.y * client_scale));
 		// float ws_scale_y = (win_size.y - GAPS_IN * (WORKSPACE_ROWS - 1) - 2 * GAPS_OUT) / WORKSPACE_ROWS; 
 
-		for (int i = 0; i < WORKSPACE_ROWS; i++) {
-			var hbox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, GAPS_IN);
-			for (int j = 0; j < WORKSPACE_COLS; j++) {
-				hbox.append(view_workspace(workspaces[i, j], ws_size, client_scale));
-				hbox.vexpand = true;
+		for (int row = 0; row < WORKSPACE_ROWS; row++) {
+			for (int col = 0; col < WORKSPACE_COLS; col++) {
+				var ws = view_workspace(workspaces[row, col], ws_size, client_scale);
+				grid.attach(ws, col, row, 1, 1);
 			}
-			box.append(hbox);
 		}
 
-		window.set_child(box);
-
+		window.set_child(grid);
 		window.present();
 	});
-
-	foreach (var client in clients.clients) {
-		print(@"client: $client");
-	}
 
 	app.run(null);
 }

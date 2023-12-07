@@ -6,6 +6,7 @@ dependencies = [
   dependency('glib-2.0'),
   dependency('gobject-2.0'),
   dependency('gee-0.8'),
+  dependency('gtk4-layer-shell-0'),
 ]
 
 add_global_arguments('--enable-experimental-non-null', language : 'vala')
