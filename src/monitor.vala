@@ -14,8 +14,10 @@ public class Monitor {
 		this.width = dict.get("width").get_int();
 		this.height = dict.get("height").get_int();
 		this.focused = dict.get("focused").get_bool();
-		this.active_workspace.id = dict.get("activeWorkspace").get_dict().get("id").get_int();
-		this.active_workspace.name = dict.get("activeWorkspace").get_dict().get("name").get_string();
+		this.active_workspace = Workspace(
+			dict.get("activeWorkspace").get_dict().get("id").get_int(),
+			dict.get("activeWorkspace").get_dict().get("name").get_string()
+		);
 	}
 
 	public string to_string() {
