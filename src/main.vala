@@ -146,7 +146,6 @@ void main() {
 
 		// float client_scale = ((float) win_size.x - GAPS_IN * (WORKSPACE_COLS - 1) - 2 * GAPS_OUT) / WORKSPACE_COLS / active_mon.width;  
 		float client_scale = ((float) win_size.x) / (float) WORKSPACE_COLS / (float) active_mon.width;  
-		print(@"client scale: $client_scale\n");
 		Vector2D ws_size = Vector2D((int)(win_size.x * client_scale), (int)(win_size.y * client_scale));
 		// float ws_scale_y = (win_size.y - GAPS_IN * (WORKSPACE_ROWS - 1) - 2 * GAPS_OUT) / WORKSPACE_ROWS; 
 
