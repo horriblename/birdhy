@@ -132,6 +132,8 @@ Vector2D fit_to_box(float aspect_ratio, int width_limit, int height_limit) {
 }
 
 class BirdhyApp : Gtk.Window {
+	Workspace[,] workspaces = new Workspace[WORKSPACE_ROWS, WORKSPACE_COLS];
+
 	public BirdhyApp() {
 		Monitor active_mon;
 		{
@@ -153,27 +155,11 @@ class BirdhyApp : Gtk.Window {
 			(int) (active_mon.height * MAX_HEIGHT)
 		);
 
-		Workspace[,] workspaces = new Workspace[WORKSPACE_ROWS, WORKSPACE_COLS];
-
 		for (int i = 0; i < WORKSPACE_COLS * WORKSPACE_ROWS; i++) {
 			workspaces[i/WORKSPACE_COLS, i % WORKSPACE_COLS] = Workspace(i+1);
 		}
 
-		var clients = get_clients().maybe_ok();
-
-		// add clients to their respective workspace
-		foreach (Client client in clients.clients) {
-			var ws_id = client.workspace.id - 1;
-			if (ws_id < 0 || !client.mapped || client.hidden) {
-				continue;
-			}
-			var i = ws_id / WORKSPACE_COLS;
-			var j = ws_id % WORKSPACE_COLS;
-			if (i < WORKSPACE_ROWS) {
-				workspaces[i, j].clients.add(client);
-			}
-		}
-
+		this.update_clients_data();
 		var icon_lookup = new IconLookup();
 
 		var window = (!) (this as Gtk.Window);
@@ -228,6 +214,30 @@ class BirdhyApp : Gtk.Window {
 
 		window.set_child(grid);
 		window.present();
+	}
+
+	// fetches clients and update this.workspace
+	// ws_mask marks which workspace(s) should be updated, e.g. {false, true, true} means the workspaces 3 and 4 
+	// should be updated. null (default) means all workspaces are updated
+	void update_clients_data(bool[]? ws_mask = null) {
+		var clients = get_clients().maybe_ok();
+
+		// add clients to their respective workspace
+		foreach (Client client in clients.clients) {
+			var ws_index = client.workspace.id - 1;
+			if (ws_index < 0 || !client.mapped || client.hidden) {
+				continue;
+			}
+			// NOTE: if ws_mask.get(ws_index) == null, this ws is also updated
+			if (ws_mask != null && ((!)ws_mask)[ws_index] == false) {
+				continue;
+			}
+			var i = ws_index / WORKSPACE_COLS;
+			var j = ws_index % WORKSPACE_COLS;
+			if (i < WORKSPACE_ROWS) {
+				workspaces[i, j].clients.add(client);
+			}
+		}
 	}
 }
 
