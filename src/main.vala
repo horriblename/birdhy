@@ -20,6 +20,23 @@ struct Workspace {
 	}
 }
 
+void execute_command(string[] command) {
+	try {
+		GLib.Process.spawn_sync(
+			null,
+			command,
+			null,
+			GLib.SpawnFlags.SEARCH_PATH,
+			null,
+			null,
+			null,
+			null
+		);
+	} catch (Error e) {
+		print("Error executing a command: %s", e.message);
+	}
+}
+
 Gtk.Widget view_workspace(
 	IconLookup icon_lookup,
 	Gtk.Window window,
@@ -30,12 +47,25 @@ Gtk.Widget view_workspace(
 	var container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 	var btn = new Gtk.Button();
 	var canvas = new Gtk.Fixed();
+	var drop_controller = new Gtk.DropTarget(typeof(string), Gdk.DragAction.COPY);
+	drop_controller.drop.connect((address) => {
+		var arg = @"$(ws.id),address:$(address.get_string())";
+		print(@"sending movetoworkspace with arg $arg\n");
+		execute_command({
+			"hyprctl",
+			"dispatch",
+			"movetoworkspacesilent",
+			// TODO: idk if GLib.Value.get_string() can fail
+			@"$(ws.id),address:$(address.get_string())"
+		});
+		return true;
+	});
+	container.add_controller(drop_controller);
 	container.append(btn);
 	container.add_css_class("workspace");
 	container.add_css_class("flat");
 	container.set_hexpand(true);
 	container.set_vexpand(true);
-	// container.set_size_request(ws_size.x, ws_size.y);
 	btn.set_child(canvas);
 	btn.set_hexpand(true);
 	btn.set_vexpand(true);
@@ -67,10 +97,11 @@ Gtk.Widget view_workspace(
 	foreach (Client client in ws.clients) {
 		var c = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 		var b = new Gtk.Button();
+		var drag_controller = new Gtk.DragSource();
 		c.add_css_class("window");
 		c.add_css_class("frame");
 
-		// doesn't work, 
+		// doesn't work, click events go to parent button
 		b.clicked.connect(() => {
 			try {
 				GLib.Process.spawn_sync(
@@ -88,6 +119,11 @@ Gtk.Widget view_workspace(
 			}
 			window.close();
 		});
+
+		GLib.Value addr_value = new GLib.Value(typeof(string));
+		addr_value.set_string(client.address);
+		drag_controller.set_content(new Gdk.ContentProvider.for_value(addr_value));
+		b.add_controller(drag_controller);
 		
 		b.set_child(new Gtk.Image.from_gicon(icon_lookup.find_icon(client.class_)));
 		b.set_vexpand(true);
