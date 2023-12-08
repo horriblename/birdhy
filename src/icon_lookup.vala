@@ -11,10 +11,6 @@ public class IconLookup {
 		} catch (Error e) {
 			print("error finding icon 'application': %s", e.message);
 		}
-
-		foreach (var entry in this.desktop_info) {
-			var id = entry.get_id() ?? "no_id";
-		}
 	}
 
 	/// guesses icon from app_id (a.k.a window class)
