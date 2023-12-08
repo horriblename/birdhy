@@ -47,13 +47,10 @@ Gtk.Widget view_workspace(
 	Vector2D ws_size,
 	float scale
 ) {
-	var container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 	var btn = new Gtk.Button();
 	var canvas = new Gtk.Fixed();
 	var drop_controller = new Gtk.DropTarget(typeof(string), Gdk.DragAction.COPY);
 	drop_controller.drop.connect((address) => {
-		var arg = @"$(ws.id),address:$(address.get_string())";
-		print(@"sending movetoworkspace with arg $arg\n");
 		execute_command({
 			"hyprctl",
 			"dispatch",
@@ -63,12 +60,9 @@ Gtk.Widget view_workspace(
 		});
 		return true;
 	});
-	container.add_controller(drop_controller);
-	container.append(btn);
-	container.add_css_class("workspace");
-	container.add_css_class("flat");
-	container.set_hexpand(true);
-	container.set_vexpand(true);
+	btn.add_controller(drop_controller);
+	btn.add_css_class("workspace");
+	btn.add_css_class("flat");
 	btn.set_child(canvas);
 	btn.set_hexpand(true);
 	btn.set_vexpand(true);
@@ -107,7 +101,7 @@ Gtk.Widget view_workspace(
 		canvas.put(c, client.at[0] * scale, client.at[1] * scale);
 	}
 
-	return container;
+	return btn;
 }
 
 struct Vector2D {
