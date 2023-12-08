@@ -1,6 +1,6 @@
 
 public class IconLookup {
-	static GLib.List<GLib.AppInfo> desktop_info = GLib.AppInfo.get_all();
+	GLib.List<GLib.AppInfo> desktop_info = GLib.AppInfo.get_all();
 	Gee.HashMap<string, weak GLib.Icon> cache = new Gee.HashMap<string, weak GLib.Icon>();
 	// FIXME: idk how I should handle default icons
 	GLib.Icon default_icon;
