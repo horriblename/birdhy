@@ -26,6 +26,7 @@ Gtk.Widget view_workspace(Gtk.Window window, Workspace ws, Vector2D ws_size, flo
 	var canvas = new Gtk.Fixed();
 	container.append(btn);
 	container.add_css_class("workspace");
+	container.add_css_class("flat");
 	container.set_hexpand(true);
 	container.set_vexpand(true);
 	// container.set_size_request(ws_size.x, ws_size.y);
