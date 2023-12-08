@@ -14,6 +14,7 @@ public struct Workspace {
 }
 
 public class Client : Object {
+	public string address;
 	public bool mapped;
 	public bool hidden;
 	public int at[2];
@@ -25,6 +26,7 @@ public class Client : Object {
 
 	public Client.from_json(JSON.Value obj) throws JSON.TypeError {
 		var dict = obj.get_dict();
+		this.address = dict.get("address").get_string();
 		this.mapped = dict.get("mapped").get_bool();
 		this.hidden = dict.get("hidden").get_bool();
 		this.at[0] = dict.get("at").get_array()[0].get_int();

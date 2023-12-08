@@ -15,6 +15,6 @@ json = static_library('json', 'src/json/lib.vala', dependencies: dependencies)
 
 # lib = static_library('data', 'src/lib.vala', dependencies: dependencies, link_with: [json])
 
-sources = files('src/main.vala', 'src/client.vala', 'src/result.vala', 'src/monitor.vala')
+sources = files('src/main.vala', 'src/client.vala', 'src/result.vala', 'src/monitor.vala', 'src/icon_lookup.vala')
 
 executable('birdhy', sources, dependencies: dependencies, link_with: [json], install: true)

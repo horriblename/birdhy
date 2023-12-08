@@ -20,7 +20,13 @@ struct Workspace {
 	}
 }
 
-Gtk.Widget view_workspace(Gtk.Window window, Workspace ws, Vector2D ws_size, float scale) {
+Gtk.Widget view_workspace(
+	IconLookup icon_lookup,
+	Gtk.Window window,
+	Workspace ws,
+	Vector2D ws_size,
+	float scale
+) {
 	var container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 	var btn = new Gtk.Button();
 	var canvas = new Gtk.Fixed();
@@ -39,7 +45,19 @@ Gtk.Widget view_workspace(Gtk.Window window, Workspace ws, Vector2D ws_size, flo
 	btn.clicked.connect(() => {
 		try {
 			print(@"switching to workspace $(ws.id): ");
-			GLib.Process.spawn_sync (null, {"hyprctl", "dispatch", "workspace", @"$(ws.id)"}, null, GLib.SpawnFlags.SEARCH_PATH, null, null, null, null);
+			GLib.Process.spawn_sync(
+				null,
+				{"hyprctl",
+				"dispatch",
+				"workspace",
+				@"$(ws.id)"},
+				null,
+				GLib.SpawnFlags.SEARCH_PATH,
+				null,
+				null,
+				null,
+				null
+			);
 		} catch (Error e) {
 			print("Error switching workspace: %s", e.message);
 		}
@@ -48,8 +66,34 @@ Gtk.Widget view_workspace(Gtk.Window window, Workspace ws, Vector2D ws_size, flo
 
 	foreach (Client client in ws.clients) {
 		var c = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+		var b = new Gtk.Button();
 		c.add_css_class("window");
 		c.add_css_class("frame");
+
+		// doesn't work, 
+		b.clicked.connect(() => {
+			try {
+				GLib.Process.spawn_sync(
+					null,
+					{"hyprctl", "dispatch", "focuswindow", @"address:$(client.address)"},
+					null,
+					GLib.SpawnFlags.SEARCH_PATH,
+					null,
+					null,
+					null,
+					null
+				);
+			} catch (Error e) {
+				print("Error switching workspace: %s", e.message);
+			}
+			window.close();
+		});
+		
+		b.set_child(new Gtk.Image.from_gicon(icon_lookup.find_icon(client.class_)));
+		b.set_vexpand(true);
+		b.set_hexpand(true);
+		b.set_focusable(false);
+		c.append(b);
 		c.set_size_request((int) (client.size[0] * scale), (int)(client.size[1] * scale));
 		canvas.put(c, client.at[0] * scale, client.at[1] * scale);
 	}
@@ -122,12 +166,12 @@ void main() {
 		}
 	}
 
+	var icon_lookup = new IconLookup();
+
 	app.activate.connect(() => {
 		var window = new Gtk.ApplicationWindow(app);
 
 		GtkLayerShell.init_for_window(window);
-		var margin_x = active_mon.width - win_size.x;
-		var margin_y = active_mon.height - win_size.y;
 		GtkLayerShell.set_namespace(window, "birdhy");
 		GtkLayerShell.set_layer(window, GtkLayerShell.Layer.TOP);
 		GtkLayerShell.set_keyboard_mode(window, GtkLayerShell.KeyboardMode.EXCLUSIVE);
@@ -164,7 +208,13 @@ void main() {
 
 		for (int row = 0; row < WORKSPACE_ROWS; row++) {
 			for (int col = 0; col < WORKSPACE_COLS; col++) {
-				var ws = view_workspace(window, workspaces[row, col], ws_size, client_scale);
+				var ws = view_workspace(
+					icon_lookup,
+					window,
+					workspaces[row, col],
+					ws_size,
+					client_scale
+				);
 				grid.attach(ws, col, row, 1, 1);
 			}
 		}
