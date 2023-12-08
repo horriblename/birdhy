@@ -33,7 +33,10 @@ void execute_command(string[] command) {
 			null
 		);
 	} catch (Error e) {
-		print("Error executing a command: %s", e.message);
+		print("Error executing command: %s\nerror: %s",
+			string.joinv(" ", command),
+			e.message
+		);
 	}
 }
 
@@ -73,24 +76,7 @@ Gtk.Widget view_workspace(
 	canvas.set_vexpand(true);
 
 	btn.clicked.connect(() => {
-		try {
-			print(@"switching to workspace $(ws.id): ");
-			GLib.Process.spawn_sync(
-				null,
-				{"hyprctl",
-				"dispatch",
-				"workspace",
-				@"$(ws.id)"},
-				null,
-				GLib.SpawnFlags.SEARCH_PATH,
-				null,
-				null,
-				null,
-				null
-			);
-		} catch (Error e) {
-			print("Error switching workspace: %s", e.message);
-		}
+		execute_command({"hyprctl", "dispatch", "workspace", @"$(ws.id)"});
 		window.close();
 	});
 
@@ -103,20 +89,7 @@ Gtk.Widget view_workspace(
 
 		// doesn't work, click events go to parent button
 		b.clicked.connect(() => {
-			try {
-				GLib.Process.spawn_sync(
-					null,
-					{"hyprctl", "dispatch", "focuswindow", @"address:$(client.address)"},
-					null,
-					GLib.SpawnFlags.SEARCH_PATH,
-					null,
-					null,
-					null,
-					null
-				);
-			} catch (Error e) {
-				print("Error switching workspace: %s", e.message);
-			}
+			execute_command({"hyprctl", "dispatch", "focuswindow", @"address:$(client.address)"});
 			window.close();
 		});
 
