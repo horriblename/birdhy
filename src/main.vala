@@ -93,7 +93,7 @@ Gtk.Widget view_workspace(
 			window.close();
 		});
 
-		GLib.Value addr_value = new GLib.Value(typeof(string));
+		GLib.Value addr_value = GLib.Value(typeof(string));
 		addr_value.set_string(client.address);
 		drag_controller.set_content(new Gdk.ContentProvider.for_value(addr_value));
 		b.add_controller(drag_controller);
@@ -131,54 +131,52 @@ Vector2D fit_to_box(float aspect_ratio, int width_limit, int height_limit) {
 	}
 }
 
-void main() {
-	var app = new Gtk.Application("com.github.horriblename.birdhy", GLib.ApplicationFlags.FLAGS_NONE);
+class BirdhyApp : Gtk.Window {
+	public BirdhyApp() {
+		Monitor active_mon;
+		{
+			Monitor? active_mon0 = null;
+			var monitors = get_monitors().maybe_ok().take();
+			foreach (Monitor monitor in monitors) {
+				if (monitor.focused) {
+					active_mon0 = monitor;
+					break;
+				}
+			}
+			active_mon = active_mon0 ?? monitors[0];
+		}
 
-	Monitor active_mon;
-	{
-		Monitor? active_mon0 = null;
-		var monitors = get_monitors().maybe_ok().take();
-		foreach (Monitor monitor in monitors) {
-			if (monitor.focused) {
-				active_mon0 = monitor;
-				break;
+		var window_aspect_ratio = (float) active_mon.width * WORKSPACE_COLS / ((float) active_mon.height * WORKSPACE_ROWS);
+		var win_size = fit_to_box(
+			window_aspect_ratio,
+			(int) (active_mon.width * MAX_WIDTH),
+			(int) (active_mon.height * MAX_HEIGHT)
+		);
+
+		Workspace[,] workspaces = new Workspace[WORKSPACE_ROWS, WORKSPACE_COLS];
+
+		for (int i = 0; i < WORKSPACE_COLS * WORKSPACE_ROWS; i++) {
+			workspaces[i/WORKSPACE_COLS, i % WORKSPACE_COLS] = Workspace(i+1);
+		}
+
+		var clients = get_clients().maybe_ok();
+
+		// add clients to their respective workspace
+		foreach (Client client in clients.clients) {
+			var ws_id = client.workspace.id - 1;
+			if (ws_id < 0 || !client.mapped || client.hidden) {
+				continue;
+			}
+			var i = ws_id / WORKSPACE_COLS;
+			var j = ws_id % WORKSPACE_COLS;
+			if (i < WORKSPACE_ROWS) {
+				workspaces[i, j].clients.add(client);
 			}
 		}
-		active_mon = active_mon0 ?? monitors[0];
-	}
 
-	var window_aspect_ratio = (float) active_mon.width * WORKSPACE_COLS / ((float) active_mon.height * WORKSPACE_ROWS);
-	var win_size = fit_to_box(
-		window_aspect_ratio,
-		(int) (active_mon.width * MAX_WIDTH),
-		(int) (active_mon.height * MAX_HEIGHT)
-	);
+		var icon_lookup = new IconLookup();
 
-	Workspace[,] workspaces = new Workspace[WORKSPACE_ROWS, WORKSPACE_COLS];
-
-	for (int i = 0; i < WORKSPACE_COLS * WORKSPACE_ROWS; i++) {
-		workspaces[i/WORKSPACE_COLS, i % WORKSPACE_COLS] = Workspace(i+1);
-	}
-
-	var clients = get_clients().maybe_ok();
-
-	// add clients to their respective workspace
-	foreach (Client client in clients.clients) {
-		var ws_id = client.workspace.id - 1;
-		if (ws_id < 0 || !client.mapped || client.hidden) {
-			continue;
-		}
-		var i = ws_id / WORKSPACE_COLS;
-		var j = ws_id % WORKSPACE_COLS;
-		if (i < WORKSPACE_ROWS) {
-			workspaces[i, j].clients.add(client);
-		}
-	}
-
-	var icon_lookup = new IconLookup();
-
-	app.activate.connect(() => {
-		var window = new Gtk.ApplicationWindow(app);
+		var window = (!) (this as Gtk.Window);
 
 		GtkLayerShell.init_for_window(window);
 		GtkLayerShell.set_namespace(window, "birdhy");
@@ -230,6 +228,14 @@ void main() {
 
 		window.set_child(grid);
 		window.present();
+	}
+}
+
+void main() {
+	var app = new Gtk.Application("com.github.horriblename.birdhy", GLib.ApplicationFlags.FLAGS_NONE);
+
+	app.activate.connect(() => {
+		app.add_window(new BirdhyApp());
 	});
 
 	app.run(null);
