@@ -127,6 +127,8 @@ Vector2D fit_to_box(float aspect_ratio, int width_limit, int height_limit) {
 
 class BirdhyApp : Gtk.Window {
 	Workspace[,] workspaces = new Workspace[WORKSPACE_ROWS, WORKSPACE_COLS];
+	IconLookup icon_lookup = new IconLookup();
+	GLib.Array<weak Gtk.Button> ws_widgets;
 
 	public BirdhyApp() {
 		Monitor active_mon;
@@ -154,7 +156,6 @@ class BirdhyApp : Gtk.Window {
 		}
 
 		this.update_clients_data();
-		var icon_lookup = new IconLookup();
 
 		var window = (!) (this as Gtk.Window);
 
@@ -193,15 +194,15 @@ class BirdhyApp : Gtk.Window {
 		Vector2D ws_size = Vector2D((int)(win_size.x * client_scale), (int)(win_size.y * client_scale));
 		// float ws_scale_y = (win_size.y - GAPS_IN * (WORKSPACE_ROWS - 1) - 2 * GAPS_OUT) / WORKSPACE_ROWS; 
 
+		this.ws_widgets = new GLib.Array<weak Gtk.Button>();
 		for (int row = 0; row < WORKSPACE_ROWS; row++) {
 			for (int col = 0; col < WORKSPACE_COLS; col++) {
-				var ws = view_workspace(
-					icon_lookup,
-					window,
-					workspaces[row, col],
+				var ws = this.build_workspace_view(
+					row*3 + col,
 					ws_size,
 					client_scale
 				);
+				this.ws_widgets.append_val(ws);
 				grid.attach(ws, col, row, 1, 1);
 			}
 		}
@@ -222,16 +223,75 @@ class BirdhyApp : Gtk.Window {
 			if (ws_index < 0 || !client.mapped || client.hidden) {
 				continue;
 			}
-			// NOTE: if ws_mask.get(ws_index) == null, this ws is also updated
+			// will list[out_of_range_index] crash?
 			if (ws_mask != null && ((!)ws_mask)[ws_index] == false) {
 				continue;
 			}
 			var i = ws_index / WORKSPACE_COLS;
 			var j = ws_index % WORKSPACE_COLS;
 			if (i < WORKSPACE_ROWS) {
-				workspaces[i, j].clients.add(client);
+				this.workspaces[i, j].clients.add(client);
 			}
 		}
+	}
+
+	Gtk.Button build_workspace_view(int ws_index, Vector2D ws_size, float scale) {
+		var ws = this.workspaces[ws_index / WORKSPACE_COLS, ws_index % WORKSPACE_COLS];
+		var btn = new Gtk.Button();
+		var canvas = new Gtk.Fixed();
+		var drop_controller = new Gtk.DropTarget(typeof(string), Gdk.DragAction.COPY);
+		drop_controller.drop.connect((address) => {
+			execute_command({
+				"hyprctl",
+				"dispatch",
+				"movetoworkspacesilent",
+				// TODO: idk if GLib.Value.get_string() can fail
+				@"$(ws.id),address:$(address.get_string())"
+			});
+			return true;
+		});
+		btn.add_controller(drop_controller);
+		btn.add_css_class("workspace");
+		btn.add_css_class("flat");
+		btn.set_child(canvas);
+		btn.set_hexpand(true);
+		btn.set_vexpand(true);
+		canvas.set_hexpand(true);
+		canvas.set_vexpand(true);
+
+		btn.clicked.connect(() => {
+			execute_command({"hyprctl", "dispatch", "workspace", @"$(ws.id)"});
+			this.close();
+		});
+
+		foreach (Client client in ws.clients) {
+			var c = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+			var b = new Gtk.Button();
+			var drag_controller = new Gtk.DragSource();
+			c.add_css_class("window");
+			c.add_css_class("frame");
+
+			// doesn't work, click events go to parent button
+			b.clicked.connect(() => {
+				execute_command({"hyprctl", "dispatch", "focuswindow", @"address:$(client.address)"});
+				this.close();
+			});
+
+			GLib.Value addr_value = GLib.Value(typeof(string));
+			addr_value.set_string(client.address);
+			drag_controller.set_content(new Gdk.ContentProvider.for_value(addr_value));
+			b.add_controller(drag_controller);
+
+			b.set_child(new Gtk.Image.from_gicon(icon_lookup.find_icon(client.class_)));
+			b.set_vexpand(true);
+			b.set_hexpand(true);
+			b.set_focusable(false);
+			c.append(b);
+			c.set_size_request((int) (client.size[0] * scale), (int)(client.size[1] * scale));
+			canvas.put(c, client.at[0] * scale, client.at[1] * scale);
+		}
+
+		return btn;
 	}
 }
 
