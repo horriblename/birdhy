@@ -238,7 +238,6 @@ class BirdhyApp : Gtk.Window {
 	Gtk.Button build_workspace_view(int ws_index, Vector2D ws_size, float scale) {
 		var ws = this.workspaces[ws_index / WORKSPACE_COLS, ws_index % WORKSPACE_COLS];
 		var btn = new Gtk.Button();
-		var canvas = new Gtk.Fixed();
 		var drop_controller = new Gtk.DropTarget(typeof(string), Gdk.DragAction.COPY);
 		drop_controller.drop.connect((address) => {
 			execute_command({
@@ -253,45 +252,55 @@ class BirdhyApp : Gtk.Window {
 		btn.add_controller(drop_controller);
 		btn.add_css_class("workspace");
 		btn.add_css_class("flat");
-		btn.set_child(canvas);
 		btn.set_hexpand(true);
 		btn.set_vexpand(true);
-		canvas.set_hexpand(true);
-		canvas.set_vexpand(true);
-
 		btn.clicked.connect(() => {
 			execute_command({"hyprctl", "dispatch", "workspace", @"$(ws.id)"});
 			this.close();
 		});
 
+		this.update_workspace_view(btn, ws, scale);
+		return btn;
+	}
+
+	void update_workspace_view(Gtk.Button btn, Workspace ws, float scale) {
+		var canvas = new Gtk.Fixed();
+		btn.set_child(canvas);
+		canvas.set_hexpand(true);
+		canvas.set_vexpand(true);
+
 		foreach (Client client in ws.clients) {
-			var c = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-			var b = new Gtk.Button();
-			var drag_controller = new Gtk.DragSource();
-			c.add_css_class("window");
-			c.add_css_class("frame");
-
-			// doesn't work, click events go to parent button
-			b.clicked.connect(() => {
-				execute_command({"hyprctl", "dispatch", "focuswindow", @"address:$(client.address)"});
-				this.close();
-			});
-
-			GLib.Value addr_value = GLib.Value(typeof(string));
-			addr_value.set_string(client.address);
-			drag_controller.set_content(new Gdk.ContentProvider.for_value(addr_value));
-			b.add_controller(drag_controller);
-
-			b.set_child(new Gtk.Image.from_gicon(icon_lookup.find_icon(client.class_)));
-			b.set_vexpand(true);
-			b.set_hexpand(true);
-			b.set_focusable(false);
-			c.append(b);
-			c.set_size_request((int) (client.size[0] * scale), (int)(client.size[1] * scale));
+			var c = build_client_view(client, scale);
 			canvas.put(c, client.at[0] * scale, client.at[1] * scale);
 		}
+	}
 
-		return btn;
+	Gtk.Widget build_client_view(Client client, float scale) {
+		var c = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+		var b = new Gtk.Button();
+		var drag_controller = new Gtk.DragSource();
+		c.add_css_class("window");
+		c.add_css_class("frame");
+
+		// doesn't work, click events go to parent button
+		b.clicked.connect(() => {
+			execute_command({"hyprctl", "dispatch", "focuswindow", @"address:$(client.address)"});
+			this.close();
+		});
+
+		GLib.Value addr_value = GLib.Value(typeof(string));
+		addr_value.set_string(client.address);
+		drag_controller.set_content(new Gdk.ContentProvider.for_value(addr_value));
+		b.add_controller(drag_controller);
+
+		b.set_child(new Gtk.Image.from_gicon(icon_lookup.find_icon(client.class_)));
+		b.set_vexpand(true);
+		b.set_hexpand(true);
+		b.set_focusable(false);
+		c.append(b);
+		c.set_size_request((int) (client.size[0] * scale), (int)(client.size[1] * scale));
+		
+		return c;
 	}
 }
 
