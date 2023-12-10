@@ -175,14 +175,24 @@ class BirdhyApp : Gtk.Window {
 		var ws = this.workspaces[ws_index / WORKSPACE_COLS, ws_index % WORKSPACE_COLS];
 		var btn = new Gtk.Button();
 		var drop_controller = new Gtk.DropTarget(typeof(string), Gdk.DragAction.COPY);
-		drop_controller.drop.connect((address) => {
+		drop_controller.drop.connect((value) => {
+			var info = decode_drag_client_info(value.get_string());
 			execute_command({
 				"hyprctl",
 				"dispatch",
 				"movetoworkspacesilent",
 				// TODO: idk if GLib.Value.get_string() can fail
-				@"$(ws.id),address:$(address.get_string())"
+				@"$(ws.id),address:$(info.client_address)"
 			});
+			int source_ws_index = info.ws_id - 1;
+			var source_ws_widget = this.ws_widgets.data[source_ws_index];
+
+			this.update_clients_data(null);
+			var source_ws = this.workspaces[source_ws_index / WORKSPACE_COLS, source_ws_index % WORKSPACE_COLS];
+			var dest_ws = this.workspaces[ws_index / WORKSPACE_COLS, ws_index % WORKSPACE_COLS];
+
+			update_workspace_view(source_ws_widget, source_ws, scale);
+			update_workspace_view(btn, dest_ws, scale);
 			return true;
 		});
 		btn.add_controller(drop_controller);
@@ -195,15 +205,28 @@ class BirdhyApp : Gtk.Window {
 			this.close();
 		});
 
+		Gtk.Fixed canvas = new Gtk.Fixed();
+		btn.set_child(canvas);
+		canvas.set_hexpand(true);
+		canvas.set_vexpand(true);
+
 		this.update_workspace_view(btn, ws, scale);
 		return btn;
 	}
 
 	void update_workspace_view(Gtk.Button btn, Workspace ws, float scale) {
-		var canvas = new Gtk.Fixed();
-		btn.set_child(canvas);
-		canvas.set_hexpand(true);
-		canvas.set_vexpand(true);
+		var btn_child = btn.get_child();
+		if (!(btn_child is Gtk.Fixed)) {
+			print("Error: expected button child to be Gtk.Fixed");
+			return;
+		}
+		var canvas = (!)(btn_child as Gtk.Fixed);
+
+		Gtk.Widget? child = canvas.get_first_child();
+		while (child != null) {
+			canvas.remove((!)child);
+			child = canvas.get_first_child();
+		}
 
 		foreach (Client client in ws.clients) {
 			var c = build_client_view(client, scale);
@@ -225,7 +248,8 @@ class BirdhyApp : Gtk.Window {
 		});
 
 		GLib.Value addr_value = GLib.Value(typeof(string));
-		addr_value.set_string(client.address);
+		// FIXME: error message if workspace id can't convert into uint8
+		addr_value.set_string(encode_drag_client_info(client.address, (uint8) client.workspace.id));
 		drag_controller.set_content(new Gdk.ContentProvider.for_value(addr_value));
 		b.add_controller(drag_controller);
 
@@ -238,6 +262,24 @@ class BirdhyApp : Gtk.Window {
 		
 		return c;
 	}
+}
+
+// HACK: trying to pass an object via drag source/ drag target is so fucking abysmal I
+// decided to encode all the info I need in a string
+string encode_drag_client_info(string address, uint8 ws_id) {
+	return @"$((char)ws_id)" + address;
+}
+
+struct DragInfo {
+	string client_address;
+	uint8 ws_id;
+}
+
+DragInfo decode_drag_client_info(string info) {
+	return DragInfo() {
+		client_address = info.substring(1),
+		ws_id = (uint8) info[0],
+	};
 }
 
 void main() {
