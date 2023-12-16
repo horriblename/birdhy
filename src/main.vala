@@ -20,6 +20,11 @@ struct Workspace {
 	}
 }
 
+errordomain AppError {
+	NO_PRIMARY_MONITOR,
+	NO_DISPLAY
+}
+
 void execute_command(string[] command) {
 	try {
 		GLib.Process.spawn_sync(
@@ -66,25 +71,23 @@ class BirdhyApp : Gtk.Window {
 	IconLookup icon_lookup = new IconLookup();
 	GLib.Array<weak Gtk.Button> ws_widgets;
 
-	public BirdhyApp() {
-		Monitor active_mon;
-		{
-			Monitor? active_mon0 = null;
-			var monitors = get_monitors().maybe_ok().take();
-			foreach (Monitor monitor in monitors) {
-				if (monitor.focused) {
-					active_mon0 = monitor;
-					break;
-				}
-			}
-			active_mon = active_mon0 ?? monitors[0];
+	public BirdhyApp() throws AppError {
+		Gdk.Display? maybe_display = Gdk.Display.get_default();
+		if (maybe_display == null) {
+			throw new AppError.NO_DISPLAY("could not find default GDK Display");
 		}
 
-		var window_aspect_ratio = (float) active_mon.width * WORKSPACE_COLS / ((float) active_mon.height * WORKSPACE_ROWS);
+		Gdk.Monitor? maybe_monitor = ((!) maybe_display).get_monitors().get_item(0) as Gdk.Monitor;
+		if (maybe_monitor == null) {
+			throw new AppError.NO_PRIMARY_MONITOR("could not find primary monitor");
+		}
+
+		Gdk.Rectangle scaled_monitor_size = ((!) maybe_monitor).get_geometry();
+		var window_aspect_ratio = (float) scaled_monitor_size.width * WORKSPACE_COLS / ((float) scaled_monitor_size.height * WORKSPACE_ROWS);
 		var win_size = fit_to_box(
 			window_aspect_ratio,
-			(int) (active_mon.width * MAX_WIDTH),
-			(int) (active_mon.height * MAX_HEIGHT)
+			(int) (scaled_monitor_size.width * MAX_WIDTH),
+			(int) (scaled_monitor_size.height * MAX_HEIGHT)
 		);
 
 		for (int i = 0; i < WORKSPACE_COLS * WORKSPACE_ROWS; i++) {
@@ -125,8 +128,7 @@ class BirdhyApp : Gtk.Window {
 		grid.set_column_homogeneous(true);
 		grid.add_controller(key_controller);
 
-		// float client_scale = ((float) win_size.x - GAPS_IN * (WORKSPACE_COLS - 1) - 2 * GAPS_OUT) / WORKSPACE_COLS / active_mon.width;  
-		float client_scale = ((float) win_size.x) / (float) WORKSPACE_COLS / (float) active_mon.width;  
+		float client_scale = ((float) win_size.x) / (float) WORKSPACE_COLS / (float) scaled_monitor_size.width;  
 		Vector2D ws_size = Vector2D((int)(win_size.x * client_scale), (int)(win_size.y * client_scale));
 		// float ws_scale_y = (win_size.y - GAPS_IN * (WORKSPACE_ROWS - 1) - 2 * GAPS_OUT) / WORKSPACE_ROWS; 
 
@@ -286,7 +288,12 @@ void main() {
 	var app = new Gtk.Application("com.github.horriblename.birdhy", GLib.ApplicationFlags.FLAGS_NONE);
 
 	app.activate.connect(() => {
-		app.add_window(new BirdhyApp());
+		try {
+			app.add_window(new BirdhyApp());
+		} catch (AppError e) {
+			print(@"$(e.message)");
+			GLib.Process.exit(1);
+		}
 	});
 
 	app.run(null);
