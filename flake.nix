@@ -16,26 +16,7 @@
   in {
     overlays = {
       default = final: _prev: {
-        hello = final.stdenv.mkDerivation {
-          pname = "apps";
-          version = "0.1";
-          src = ./.;
-          nativeBuildInputs = with final; [
-            meson
-            vala
-            vala-language-server
-            pkg-config
-            ninja
-            cmake
-          ];
-          buildInputs = with final; [
-            gtk4
-            glib
-            libgee
-            gobject-introspection
-            gtk4-layer-shell
-          ];
-        };
+        hello = final.callPackage ./birdhy.nix {};
       };
     };
 
@@ -68,5 +49,7 @@
         ];
       };
     });
+
+    formatter = eachSystem (system: pkgsFor.${system}.alejandra);
   };
 }
